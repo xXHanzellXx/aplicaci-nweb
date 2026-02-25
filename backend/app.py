@@ -11,123 +11,106 @@ from bson.objectid import ObjectId
 # Cargar variables de entorno
 load_dotenv()
 
-# Configuración de Flask para servir archivos estáticos (HTML, CSS, JS)
-app = Flask(__name__, static_folder='.', static_url_path='')
+# Configuración: Flask busca el frontend saliendo de 'backend'
+app = Flask(__name__, static_folder='../frontend', static_url_path='')
 CORS(app)
 
-# [cite_start]Conexión a MongoDB Atlas [cite: 1]
+# Conexión a MongoDB Atlas
 client = MongoClient(os.getenv("MONGO_URI"))
-[cite_start]db = client["vestuario"] [cite: 1]
+db = client["vestuario"]
 
-[cite_start]users = db["users"] [cite: 1]
-[cite_start]clothes = db["clothes"] [cite: 1]
-[cite_start]rentals = db["rentals"] [cite: 1]
-[cite_start]outfits = db["outfits"] [cite: 1]
+users = db["users"]
+clothes = db["clothes"]
+rentals = db["rentals"]
+outfits = db["outfits"]
 
-[cite_start]JWT_SECRET = os.getenv("JWT_SECRET") [cite: 1]
+JWT_SECRET = os.getenv("JWT_SECRET")
 
 # =========================
 # Rutas para servir el Frontend
 # =========================
 @app.route('/')
 def index():
-    return send_from_directory('.', 'index.html')
+    return send_from_directory(app.static_folder, 'index.html')
 
 @app.route('/<path:path>')
 def serve_static(path):
-    return send_from_directory('.', path)
+    return send_from_directory(app.static_folder, path)
 
 # =========================
 # Middleware de Autenticación
 # =========================
 def token_required(func):
     def wrapper(*args, **kwargs):
-        [cite_start]token = request.headers.get("Authorization") [cite: 1]
+        token = request.headers.get("Authorization")
         if not token:
-            [cite_start]return jsonify({"error": "Token requerido"}), 401 [cite: 1]
-
+            return jsonify({"error": "Token requerido"}), 401
         try:
-            # Quitamos el prefijo 'Bearer ' si existe
             if token.startswith("Bearer "):
                 token = token.split(" ")[1]
-            [cite_start]data = jwt.decode(token, JWT_SECRET, algorithms=["HS256"]) [cite: 1]
-            [cite_start]request.user_id = data["user_id"] [cite: 1]
-        except Exception as e:
-            [cite_start]return jsonify({"error": "Token inválido"}), 401 [cite: 1]
-
-        [cite_start]return func(*args, **kwargs) [cite: 1]
+            data = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+            request.user_id = data["user_id"]
+        except:
+            return jsonify({"error": "Token inválido"}), 401
+        return func(*args, **kwargs)
     wrapper.__name__ = func.__name__
     return wrapper
 
 # =========================
-# API Endpoints
+# API Endpoints (Tu Lógica)
 # =========================
 
 @app.route("/api/register", methods=["POST"])
 def register():
-    [cite_start]data = request.json [cite: 1]
-    [cite_start]if users.find_one({"email": data["email"]}): [cite: 1]
-        [cite_start]return jsonify({"error": "Email ya existe"}), 400 [cite: 1]
-
-    [cite_start]hashed = bcrypt.hashpw(data["password"].encode(), bcrypt.gensalt()) [cite: 1]
-    [cite_start]users.insert_one({ [cite: 1]
-        [cite_start]"name": data["name"], [cite: 1]
-        [cite_start]"email": data["email"], [cite: 1]
-        [cite_start]"password": hashed [cite: 1]
-    })
-    [cite_start]return jsonify({"message": "Usuario creado"}) [cite: 1]
+    data = request.json
+    if users.find_one({"email": data["email"]}):
+        return jsonify({"error": "Email ya existe"}), 400
+    hashed = bcrypt.hashpw(data["password"].encode(), bcrypt.gensalt())
+    users.insert_one({"name": data["name"], "email": data["email"], "password": hashed})
+    return jsonify({"message": "Usuario creado"})
 
 @app.route("/api/login", methods=["POST"])
 def login():
-    [cite_start]data = request.json [cite: 1]
-    [cite_start]user = users.find_one({"email": data["email"]}) [cite: 1]
-
-    [cite_start]if not user: [cite: 1]
-        [cite_start]return jsonify({"error": "Usuario no existe"}), 400 [cite: 1]
-
-    [cite_start]if not bcrypt.checkpw(data["password"].encode(), user["password"]): [cite: 1]
-        [cite_start]return jsonify({"error": "Contraseña incorrecta"}), 400 [cite: 1]
-
-    token = jwt.encode(
-        {
-            [cite_start]"user_id": str(user["_id"]), [cite: 1]
-            [cite_start]"exp": datetime.now(timezone.utc) + timedelta(hours=24) [cite: 1]
-        },
-        JWT_SECRET,
-        algorithm="HS256"
-    [cite_start]) [cite: 1]
-
-    [cite_start]return jsonify({"token": token}) [cite: 1]
+    data = request.json
+    user = users.find_one({"email": data["email"]})
+    if not user or not bcrypt.checkpw(data["password"].encode(), user["password"]):
+        return jsonify({"error": "Credenciales incorrectas"}), 400
+    
+    token = jwt.encode({
+        "user_id": str(user["_id"]),
+        "exp": datetime.now(timezone.utc) + timedelta(hours=24)
+    }, JWT_SECRET, algorithm="HS256")
+    return jsonify({"token": token})
 
 @app.route("/api/clothes", methods=["GET"])
 def get_clothes():
-    [cite_start]items = list(clothes.find()) [cite: 1]
-    [cite_start]for item in items: [cite: 1]
-        [cite_start]item["_id"] = str(item["_id"]) [cite: 1]
-    [cite_start]return jsonify(items) [cite: 1]
+    items = list(clothes.find())
+    for item in items: item["_id"] = str(item["_id"])
+    return jsonify(items)
 
 @app.route("/api/rent", methods=["POST"])
 @token_required
 def rent():
-    [cite_start]data = request.json [cite: 1]
-    [cite_start]rentals.insert_one({ [cite: 1]
-        [cite_start]"user_id": request.user_id, [cite: 1]
-        [cite_start]"clothe_id": data["clothe_id"], [cite: 1]
-        [cite_start]"date": datetime.now(timezone.utc) [cite: 1]
+    data = request.json
+    rentals.insert_one({
+        "user_id": request.user_id,
+        "clothe_id": data["clothe_id"],
+        "date": datetime.now(timezone.utc)
     })
-    [cite_start]return jsonify({"message": "Alquiler realizado"}) [cite: 1]
+    return jsonify({"message": "Alquiler realizado"})
 
 @app.route("/api/outfit", methods=["POST"])
 @token_required
 def save_outfit():
-    [cite_start]data = request.json [cite: 1]
-    [cite_start]outfits.insert_one({ [cite: 1]
-        [cite_start]"user_id": request.user_id, [cite: 1]
-        [cite_start]"shirt": data["shirt"], [cite: 1]
-        [cite_start]"pants": data["pants"], [cite: 1]
-        [cite_start]"saved_at": datetime.now(timezone.utc) [cite: 1]
+    data = request.json
+    outfits.insert_one({
+        "user_id": request.user_id,
+        "shirt": data["shirt"],
+        "pants": data["pants"],
+        "saved_at": datetime.now(timezone.utc)
     })
-    [cite_start]return jsonify({"message": "Outfit guardado"}) [cite: 1]
+    return jsonify({"message": "Outfit guardado"})
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
