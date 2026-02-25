@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login | Vestuario</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="left-panel">
+    <h1>Alquiler de Vestuario</h1>
+    <p>Viste tu mejor versión</p>
+  </div>
+
+  <div class="right-panel">
+    <div class="card">
+      <h2>Iniciar Sesión</h2>
+
+      <input type="email" id="email" placeholder="Correo">
+      <input type="password" id="password" placeholder="Contraseña">
+
+      <button onclick="login()">Entrar</button>
+
+      <p style="margin-top:15px;">
+        ¿No tienes cuenta?
+        <a href="register.html">Registrarse</a>
+      </p>
+
+      <p id="error" style="color:red;"></p>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/auth.js"></script>
+</body>
+</html>     

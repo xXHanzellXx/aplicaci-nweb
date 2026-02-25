@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Registro | Vestuario</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <div class="left-panel">
+    <h1>Crea tu Cuenta</h1>
+    <p>Empieza a alquilar ahora</p>
+  </div>
+
+  <div class="right-panel">
+    <div class="card">
+      <h2>Registro</h2>
+
+      <input type="text" id="name" placeholder="Nombre">
+      <input type="email" id="email" placeholder="Correo">
+      <input type="password" id="password" placeholder="Contraseña">
+
+      <button onclick="register()">Crear Cuenta</button>
+
+      <p style="margin-top:15px;">
+        ¿Ya tienes cuenta?
+        <a href="index.html">Iniciar sesión</a>
+      </p>
+
+      <p id="error" style="color:red;"></p>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/auth.js"></script>
+</body>
+</html> 

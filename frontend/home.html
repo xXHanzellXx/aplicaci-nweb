@@ -1,0 +1,29 @@
+<section>
+  <h2>Catálogo</h2>
+  <div id="catalog"></div>
+</section>
+<section class="avatar-area">
+  <h2>Personaliza tu estilo</h2>
+
+  <div class="avatar-container">
+    <div class="avatar">
+      <img src="img/body.png" class="layer">
+      <img id="shirt" class="layer">
+      <img id="pants" class="layer">
+    </div>
+
+    <div class="controls">
+      <button onclick="changeShirt('img/shirt1.png')">Camisa Negra</button>
+      <button onclick="changeShirt('img/shirt2.png')">Camisa Blanca</button>
+      <button onclick="changePants('img/pants1.png')">Pantalón Formal</button>
+      <button onclick="saveOutfit()">Guardar Outfit</button>
+    </div>
+  </div>
+</section>
+<script>
+  const token = localStorage.getItem("token");
+  if (!token) {
+    window.location.href = "index.html";
+  }
+</script>
+<button onclick="logout()" class="logout-btn">Cerrar sesión</button>
