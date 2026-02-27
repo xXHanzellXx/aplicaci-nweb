@@ -25,5 +25,23 @@
   if (!token) {
     window.location.href = "index.html";
   }
+
+
+    // Cargar la ropa automáticamente al entrar
+    window.onload = async () => {
+        const res = await fetch('/api/clothes');
+        const items = await res.json();
+        const catalog = document.getElementById("catalog");
+        items.forEach(item => {
+            catalog.innerHTML += `
+                <div class="card">
+                    <h3>${item.name}</h3>
+                    <p>$${item.price}</p>
+                    <button onclick="changeShirt('${item.image}')">Probar</button>
+                </div>
+            `;
+        });
+    };
 </script>
+<script src="js/auth.js"></script>
 <button onclick="logout()" class="logout-btn">Cerrar sesión</button>
