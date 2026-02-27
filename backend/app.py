@@ -11,9 +11,11 @@ from bson.objectid import ObjectId
 # Cargar variables de entorno
 load_dotenv()
 
-# Configuración: Flask busca el frontend saliendo de 'backend'
-app = Flask(__name__, static_folder='../frontend', static_url_path='')
-CORS(app)
+from flask import Flask, request, jsonify
+from flask_cors import CORS  # <--- 1. Importar
+
+app = Flask(__name__)
+CORS(app)  # <--- 2. Activar (Sin esto, Netlify nunca podrá conectar)
 
 # Conexión a MongoDB Atlas
 client = MongoClient(os.getenv("MONGO_URI"))
@@ -129,5 +131,6 @@ def save_outfit():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
+
 
 
