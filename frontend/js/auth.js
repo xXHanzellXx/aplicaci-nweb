@@ -1,7 +1,7 @@
-// Detectar si estamos en local o en Render para usar la URL correcta
+// CORRECCIÓN: URL completa de Render para que Netlify la encuentre
 const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
     ? "http://127.0.0.1:5000/api" 
-    : "/api";
+    : "https://aplicaci-nweb.onrender.com/api";
 
 // --- Lógica del Avatar ---
 function changeShirt(imgSrc) {
@@ -28,7 +28,7 @@ async function register() {
     const errorDiv = document.getElementById("error");
 
     if (!name || !email || !password) {
-        errorDiv.innerText = "Por favor, completa todos los campos";
+        if (errorDiv) errorDiv.innerText = "Por favor, completa todos los campos";
         return;
     }
 
@@ -45,11 +45,11 @@ async function register() {
             alert("Registro exitoso, ahora inicia sesión");
             window.location.href = "index.html";
         } else {
-            errorDiv.innerText = data.error || "Error en el registro";
+            if (errorDiv) errorDiv.innerText = data.error || "Error en el registro";
         }
     } catch (err) {
-        errorDiv.innerText = "No se pudo conectar con el servidor";
-        console.error("Error:", err);
+        if (errorDiv) errorDiv.innerText = "No se pudo conectar con el servidor de Render";
+        console.error("Error detallado:", err);
     }
 }
 
@@ -71,10 +71,10 @@ async function login() {
             localStorage.setItem("token", data.token);
             window.location.href = "home.html";
         } else {
-            errorDiv.innerText = data.error || "Credenciales incorrectas";
+            if (errorDiv) errorDiv.innerText = data.error || "Credenciales incorrectas";
         }
     } catch (err) {
-        errorDiv.innerText = "Error de conexión";
+        if (errorDiv) errorDiv.innerText = "Error de conexión";
         console.error("Error:", err);
     }
 }
@@ -98,8 +98,8 @@ async function saveOutfit() {
                 "Authorization": `Bearer ${token}` 
             },
             body: JSON.stringify({ 
-                shirt: shirt.src, 
-                pants: pants.src 
+                shirt: shirt ? shirt.src : "", 
+                pants: pants ? pants.src : "" 
             })
         });
 
