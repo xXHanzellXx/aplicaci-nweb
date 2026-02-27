@@ -60,31 +60,36 @@ def token_required(func):
 # API Endpoints (Tu Lógica)
 # =========================
 
-# Modifica la ruta de registro en app.py
+# En la parte de arriba, asegúrate de tener:
+# from datetime import datetime, timedelta, timezone
+
 @app.route("/api/register", methods=["POST"])
 def register():
     data = request.json
+    if not data or "email" not in data:
+        return jsonify({"error": "Datos inválidos"}), 400
+        
     if users.find_one({"email": data["email"]}):
         return jsonify({"error": "Email ya existe"}), 400
     
-    # IMPORTANTE: Guardamos el hash como string para evitar líos con JSON
-    hashed = bcrypt.hashpw(data["password"].encode('utf-8'), bcrypt.gensalt())
+    # .decode('utf-8') convierte los bytes del hash en un string para MongoDB
+    hashed = bcrypt.hashpw(data["password"].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    
     users.insert_one({
         "name": data["name"], 
         "email": data["email"], 
-        "password": hashed # MongoDB guarda esto bien
+        "password": hashed 
     })
-    return jsonify({"message": "Usuario creado"})
+    return jsonify({"message": "Usuario creado"}), 201
 
-# Modifica la ruta de login en app.py
 @app.route("/api/login", methods=["POST"])
 def login():
     data = request.json
     user = users.find_one({"email": data["email"]})
     
-    # Verificación de seguridad
-    if not user or not bcrypt.checkpw(data["password"].encode('utf-8'), user["password"]):
-        return jsonify({"error": "Credenciales incorrectas"}), 400
+    # Comparamos: el password del login vs el hash (convertido a bytes) de la DB
+    if not user or not bcrypt.checkpw(data["password"].encode('utf-8'), user["password"].encode('utf-8')):
+        return jsonify({"error": "Credenciales incorrectas"}), 401
     
     token = jwt.encode({
         "user_id": str(user["_id"]),
@@ -92,7 +97,6 @@ def login():
     }, JWT_SECRET, algorithm="HS256")
     
     return jsonify({"token": token})
-
 @app.route("/api/clothes", methods=["GET"])
 def get_clothes():
     items = list(clothes.find())
@@ -125,4 +129,5 @@ def save_outfit():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
+
 
