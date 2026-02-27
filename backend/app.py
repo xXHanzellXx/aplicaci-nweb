@@ -60,26 +60,37 @@ def token_required(func):
 # API Endpoints (Tu Lógica)
 # =========================
 
+# Modifica la ruta de registro en app.py
 @app.route("/api/register", methods=["POST"])
 def register():
     data = request.json
     if users.find_one({"email": data["email"]}):
         return jsonify({"error": "Email ya existe"}), 400
-    hashed = bcrypt.hashpw(data["password"].encode(), bcrypt.gensalt())
-    users.insert_one({"name": data["name"], "email": data["email"], "password": hashed})
+    
+    # IMPORTANTE: Guardamos el hash como string para evitar líos con JSON
+    hashed = bcrypt.hashpw(data["password"].encode('utf-8'), bcrypt.gensalt())
+    users.insert_one({
+        "name": data["name"], 
+        "email": data["email"], 
+        "password": hashed # MongoDB guarda esto bien
+    })
     return jsonify({"message": "Usuario creado"})
 
+# Modifica la ruta de login en app.py
 @app.route("/api/login", methods=["POST"])
 def login():
     data = request.json
     user = users.find_one({"email": data["email"]})
-    if not user or not bcrypt.checkpw(data["password"].encode(), user["password"]):
+    
+    # Verificación de seguridad
+    if not user or not bcrypt.checkpw(data["password"].encode('utf-8'), user["password"]):
         return jsonify({"error": "Credenciales incorrectas"}), 400
     
     token = jwt.encode({
         "user_id": str(user["_id"]),
         "exp": datetime.now(timezone.utc) + timedelta(hours=24)
     }, JWT_SECRET, algorithm="HS256")
+    
     return jsonify({"token": token})
 
 @app.route("/api/clothes", methods=["GET"])
@@ -114,3 +125,4 @@ def save_outfit():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
+
