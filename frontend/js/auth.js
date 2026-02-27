@@ -1,76 +1,120 @@
-const API_URL = "/api"; // Al estar en el mismo servidor de Render, no necesitas poner la URL completa
+// Detectar si estamos en local o en Render para usar la URL correcta
+const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+    ? "http://127.0.0.1:5000/api" 
+    : "/api";
 
-// --- Lógica del Avatar (Dress to Impress) ---
+// --- Lógica del Avatar ---
 function changeShirt(imgSrc) {
     const shirt = document.getElementById("shirt");
-    shirt.src = imgSrc;
-    shirt.style.display = "block";
+    if (shirt) {
+        shirt.src = imgSrc;
+        shirt.style.display = "block";
+    }
 }
 
 function changePants(imgSrc) {
     const pants = document.getElementById("pants");
-    pants.src = imgSrc;
-    pants.style.display = "block";
+    if (pants) {
+        pants.src = imgSrc;
+        pants.style.display = "block";
+    }
 }
 
-// Añadir a js/auth.js
+// --- Autenticación ---
 async function register() {
     const name = document.getElementById("name").value;
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
+    const errorDiv = document.getElementById("error");
 
-    const res = await fetch(`${API_URL}/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password })
-    });
+    if (!name || !email || !password) {
+        errorDiv.innerText = "Por favor, completa todos los campos";
+        return;
+    }
 
-    const data = await res.json();
-    if (res.ok) {
-        alert("Registro exitoso, ahora inicia sesión");
-        window.location.href = "index.html";
-    } else {
-        document.getElementById("error").innerText = data.error;
+    try {
+        const res = await fetch(`${API_URL}/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, email, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+            alert("Registro exitoso, ahora inicia sesión");
+            window.location.href = "index.html";
+        } else {
+            errorDiv.innerText = data.error || "Error en el registro";
+        }
+    } catch (err) {
+        errorDiv.innerText = "No se pudo conectar con el servidor";
+        console.error("Error:", err);
     }
 }
 
-// --- Peticiones al Servidor ---
 async function login() {
     const email = document.getElementById("email").value;
     const password = document.getElementById("password").value;
-    const res = await fetch(`${API_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (data.token) {
-        localStorage.setItem("token", data.token);
-        window.location.href = "home.html";
-    } else {
-        document.getElementById("error").innerText = data.error;
+    const errorDiv = document.getElementById("error");
+
+    try {
+        const res = await fetch(`${API_URL}/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.token) {
+            localStorage.setItem("token", data.token);
+            window.location.href = "home.html";
+        } else {
+            errorDiv.innerText = data.error || "Credenciales incorrectas";
+        }
+    } catch (err) {
+        errorDiv.innerText = "Error de conexión";
+        console.error("Error:", err);
     }
 }
 
+// --- Guardar Outfit ---
 async function saveOutfit() {
     const token = localStorage.getItem("token");
-    const shirt = document.getElementById("shirt").src;
-    const pants = document.getElementById("pants").src;
+    const shirt = document.getElementById("shirt");
+    const pants = document.getElementById("pants");
 
-    const res = await fetch(`${API_URL}/outfit`, {
-        method: "POST",
-        headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}` 
-        },
-        body: JSON.stringify({ shirt, pants })
-    });
-    const data = await res.json();
-    alert(data.message);
+    if (!token) {
+        alert("Debes iniciar sesión para guardar tu outfit");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/outfit`, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}` 
+            },
+            body: JSON.stringify({ 
+                shirt: shirt.src, 
+                pants: pants.src 
+            })
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+            alert(data.message || "¡Outfit guardado con éxito!");
+        } else {
+            alert(data.error || "Error al guardar outfit");
+        }
+    } catch (err) {
+        alert("Error de red al intentar guardar");
+    }
 }
 
 function logout() {
     localStorage.removeItem("token");
     window.location.href = "index.html";
 }
-
