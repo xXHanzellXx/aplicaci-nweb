@@ -13,6 +13,27 @@ function changePants(imgSrc) {
     pants.style.display = "block";
 }
 
+// Añadir a js/auth.js
+async function register() {
+    const name = document.getElementById("name").value;
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    const res = await fetch(`${API_URL}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password })
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+        alert("Registro exitoso, ahora inicia sesión");
+        window.location.href = "index.html";
+    } else {
+        document.getElementById("error").innerText = data.error;
+    }
+}
+
 // --- Peticiones al Servidor ---
 async function login() {
     const email = document.getElementById("email").value;
@@ -52,3 +73,4 @@ function logout() {
     localStorage.removeItem("token");
     window.location.href = "index.html";
 }
+
